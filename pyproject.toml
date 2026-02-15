@@ -1,0 +1,13 @@
+[project]
+name = "ose-mcp"
+version = "0.2.0"
+requires-python = ">=3.11"
+dependencies = [
+  "mcp",
+  "pydantic",
+  "requests",
+  "beautifulsoup4",
+]
+
+[project.scripts]
+ose-mcp = "ose_mcp.server:main"

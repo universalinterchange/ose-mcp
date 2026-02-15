@@ -1,0 +1,2 @@
+[console_scripts]
+ose-mcp = ose_mcp.server:main

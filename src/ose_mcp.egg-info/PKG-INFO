@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: ose-mcp
+Version: 0.2.0
+Requires-Python: >=3.11
+Requires-Dist: mcp
+Requires-Dist: pydantic
+Requires-Dist: requests
+Requires-Dist: beautifulsoup4
