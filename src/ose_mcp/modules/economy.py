@@ -2,18 +2,20 @@ import json
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_economy() -> dict[str, Any]:
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS market_items (
+      name TEXT PRIMARY KEY,
+      base_price_gp INTEGER NOT NULL,
+      tags TEXT NOT NULL DEFAULT ''
+    """)
+  return {"ok": True}
+
 def register_economy(mcp):
   @mcp.tool()
-  def economy_init() -> dict[str, Any]:
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS market_items (
-        name TEXT PRIMARY KEY,
-        base_price_gp INTEGER NOT NULL,
-        tags TEXT NOT NULL DEFAULT ''
-      );
-      """)
-    return {"ok": True}
+  def economy_init() -> dict:
+    return init_economy()
 
   @mcp.tool()
   def set_market_item(name: str, base_price_gp: int, tags: list[str] | None = None) -> dict[str, Any]:

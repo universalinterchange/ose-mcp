@@ -3,85 +3,88 @@ import random
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_world() -> dict[str, Any]:
+  """Initialize world tables (NPCs, factions, relationships, rumors, sites, hexes, dungeons)."""
+  with connect() as con:
+    con.executescript("""
+    PRAGMA foreign_keys=ON;
+
+    CREATE TABLE IF NOT EXISTS npcs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      role TEXT,
+      attitude INTEGER NOT NULL DEFAULT 0,
+      meta_json TEXT NOT NULL DEFAULT '{}'
+    );
+
+    CREATE TABLE IF NOT EXISTS factions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      power INTEGER NOT NULL DEFAULT 1,
+      meta_json TEXT NOT NULL DEFAULT '{}'
+    );
+
+    CREATE TABLE IF NOT EXISTS relationships (
+      a_type TEXT NOT NULL, a_id INTEGER NOT NULL,
+      b_type TEXT NOT NULL, b_id INTEGER NOT NULL,
+      status TEXT NOT NULL, intensity INTEGER NOT NULL DEFAULT 1,
+      meta_json TEXT NOT NULL DEFAULT '{}',
+      PRIMARY KEY (a_type, a_id, b_type, b_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS rumors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text TEXT NOT NULL,
+      truth INTEGER NOT NULL DEFAULT 1,
+      used INTEGER NOT NULL DEFAULT 0,
+      tags TEXT NOT NULL DEFAULT ''
+    );
+
+    CREATE TABLE IF NOT EXISTS sites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      hex_key TEXT,
+      meta_json TEXT NOT NULL DEFAULT '{}'
+    );
+
+    CREATE TABLE IF NOT EXISTS hexes (
+      hex_key TEXT PRIMARY KEY,
+      discovered INTEGER NOT NULL DEFAULT 0,
+      feature TEXT,
+      meta_json TEXT NOT NULL DEFAULT '{}'
+    );
+
+    CREATE TABLE IF NOT EXISTS dungeons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      meta_json TEXT NOT NULL DEFAULT '{}'
+    );
+
+    CREATE TABLE IF NOT EXISTS dungeon_rooms (
+      dungeon_id INTEGER NOT NULL,
+      room_key TEXT NOT NULL,
+      data_json TEXT NOT NULL,
+      PRIMARY KEY (dungeon_id, room_key),
+      FOREIGN KEY (dungeon_id) REFERENCES dungeons(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS dungeon_edges (
+      dungeon_id INTEGER NOT NULL,
+      a TEXT NOT NULL,
+      b TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'door',
+      meta_json TEXT NOT NULL DEFAULT '{}',
+      PRIMARY KEY (dungeon_id, a, b),
+      FOREIGN KEY (dungeon_id) REFERENCES dungeons(id) ON DELETE CASCADE
+    );
+    """)
+  return {"ok": True}
+
 def register_world(mcp):
   @mcp.tool()
-  def world_init() -> dict[str, Any]:
-    """Initialize world tables (NPCs, factions, relationships, rumors, sites, hexes, dungeons)."""
-    with connect() as con:
-      con.executescript("""
-      PRAGMA foreign_keys=ON;
-
-      CREATE TABLE IF NOT EXISTS npcs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        role TEXT,
-        attitude INTEGER NOT NULL DEFAULT 0,
-        meta_json TEXT NOT NULL DEFAULT '{}'
-      );
-
-      CREATE TABLE IF NOT EXISTS factions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        power INTEGER NOT NULL DEFAULT 1,
-        meta_json TEXT NOT NULL DEFAULT '{}'
-      );
-
-      CREATE TABLE IF NOT EXISTS relationships (
-        a_type TEXT NOT NULL, a_id INTEGER NOT NULL,
-        b_type TEXT NOT NULL, b_id INTEGER NOT NULL,
-        status TEXT NOT NULL, intensity INTEGER NOT NULL DEFAULT 1,
-        meta_json TEXT NOT NULL DEFAULT '{}',
-        PRIMARY KEY (a_type, a_id, b_type, b_id)
-      );
-
-      CREATE TABLE IF NOT EXISTS rumors (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        text TEXT NOT NULL,
-        truth INTEGER NOT NULL DEFAULT 1,
-        used INTEGER NOT NULL DEFAULT 0,
-        tags TEXT NOT NULL DEFAULT ''
-      );
-
-      CREATE TABLE IF NOT EXISTS sites (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        kind TEXT NOT NULL,
-        hex_key TEXT,
-        meta_json TEXT NOT NULL DEFAULT '{}'
-      );
-
-      CREATE TABLE IF NOT EXISTS hexes (
-        hex_key TEXT PRIMARY KEY,
-        discovered INTEGER NOT NULL DEFAULT 0,
-        feature TEXT,
-        meta_json TEXT NOT NULL DEFAULT '{}'
-      );
-
-      CREATE TABLE IF NOT EXISTS dungeons (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        meta_json TEXT NOT NULL DEFAULT '{}'
-      );
-
-      CREATE TABLE IF NOT EXISTS dungeon_rooms (
-        dungeon_id INTEGER NOT NULL,
-        room_key TEXT NOT NULL,
-        data_json TEXT NOT NULL,
-        PRIMARY KEY (dungeon_id, room_key),
-        FOREIGN KEY (dungeon_id) REFERENCES dungeons(id) ON DELETE CASCADE
-      );
-
-      CREATE TABLE IF NOT EXISTS dungeon_edges (
-        dungeon_id INTEGER NOT NULL,
-        a TEXT NOT NULL,
-        b TEXT NOT NULL,
-        kind TEXT NOT NULL DEFAULT 'door',
-        meta_json TEXT NOT NULL DEFAULT '{}',
-        PRIMARY KEY (dungeon_id, a, b),
-        FOREIGN KEY (dungeon_id) REFERENCES dungeons(id) ON DELETE CASCADE
-      );
-      """)
-    return {"ok": True}
+  def world_init() -> dict:
+    return init_world()
 
   @mcp.tool()
   def create_npc(name: str | None = None, role: str | None = None, tags: list[str] | None = None) -> dict[str, Any]:

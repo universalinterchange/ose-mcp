@@ -3,6 +3,33 @@ import random
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_tables() -> dict[str, Any]:
+  """Create tables for encounter lists (dungeon/wilderness/town complications)."""
+  with connect() as con:
+    con.executescript("""
+    PRAGMA foreign_keys=ON;
+
+    CREATE TABLE IF NOT EXISTS encounter_tables (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      scope TEXT NOT NULL,        -- 'dungeon'|'wilderness'|'town'
+      scope_id INTEGER,         -- dungeon_id for dungeon scope; NULL otherwise
+      level INTEGER NOT NULL DEFAULT 1,  -- dungeon level / region danger level
+      biome TEXT NOT NULL DEFAULT '',  -- e.g. 'forest','swamp','hills','urban'
+      name TEXT NOT NULL,
+      meta_json TEXT NOT NULL DEFAULT '{}'
+    );
+
+    CREATE TABLE IF NOT EXISTS encounter_entries (
+      table_id INTEGER NOT NULL,
+      entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      weight INTEGER NOT NULL DEFAULT 1,
+      label TEXT NOT NULL,
+      data_json TEXT NOT NULL DEFAULT '{}',
+      FOREIGN KEY (table_id) REFERENCES encounter_tables(id) ON DELETE CASCADE
+    );
+    """)
+  return {"ok": True}
+
 def _weighted_pick(rows: list[dict[str, Any]]) -> dict[str, Any]:
   total = sum(int(r["weight"]) for r in rows)
   roll = random.randint(1, max(1, total))
@@ -15,32 +42,8 @@ def _weighted_pick(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 def register_tables(mcp):
   @mcp.tool()
-  def tables_init() -> dict[str, Any]:
-    """Create tables for encounter lists (dungeon/wilderness/town complications)."""
-    with connect() as con:
-      con.executescript("""
-      PRAGMA foreign_keys=ON;
-
-      CREATE TABLE IF NOT EXISTS encounter_tables (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        scope TEXT NOT NULL,        -- 'dungeon'|'wilderness'|'town'
-        scope_id INTEGER,         -- dungeon_id for dungeon scope; NULL otherwise
-        level INTEGER NOT NULL DEFAULT 1,  -- dungeon level / region danger level
-        biome TEXT NOT NULL DEFAULT '',  -- e.g. 'forest','swamp','hills','urban'
-        name TEXT NOT NULL,
-        meta_json TEXT NOT NULL DEFAULT '{}'
-      );
-
-      CREATE TABLE IF NOT EXISTS encounter_entries (
-        table_id INTEGER NOT NULL,
-        entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        weight INTEGER NOT NULL DEFAULT 1,
-        label TEXT NOT NULL,
-        data_json TEXT NOT NULL DEFAULT '{}',
-        FOREIGN KEY (table_id) REFERENCES encounter_tables(id) ON DELETE CASCADE
-      );
-      """)
-    return {"ok": True}
+  def tables_init() -> dict:
+    return init_tables()
 
   @mcp.tool()
   def create_encounter_table(

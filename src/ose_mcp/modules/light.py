@@ -2,6 +2,23 @@ import json
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_light() -> dict[str, Any]:
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS light_rules (
+      item TEXT PRIMARY KEY,
+      turns INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS light_state (
+      pc_id INTEGER PRIMARY KEY,
+      active_item TEXT,
+      turns_left INTEGER NOT NULL DEFAULT 0
+    );
+    """)
+    for item, t in DEFAULT_LIGHT.items():
+      con.execute("INSERT OR IGNORE INTO light_rules(item, turns) VALUES (?,?)", (item, int(t)))
+  return {"ok": True}
+
 # default burn rates in dungeon turns (10 min each)
 DEFAULT_LIGHT = {
   "Torch": 6,    # 1 hour = 6 turns
@@ -11,22 +28,8 @@ DEFAULT_LIGHT = {
 
 def register_light(mcp):
   @mcp.tool()
-  def light_init() -> dict[str, Any]:
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS light_rules (
-        item TEXT PRIMARY KEY,
-        turns INTEGER NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS light_state (
-        pc_id INTEGER PRIMARY KEY,
-        active_item TEXT,
-        turns_left INTEGER NOT NULL DEFAULT 0
-      );
-      """)
-      for item, t in DEFAULT_LIGHT.items():
-        con.execute("INSERT OR IGNORE INTO light_rules(item, turns) VALUES (?,?)", (item, int(t)))
-    return {"ok": True}
+  def light_init() -> dict:
+    return init_light()
 
   @mcp.tool()
   def light_equip(pc_id: int, item: str) -> dict[str, Any]:

@@ -1,24 +1,26 @@
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_procedures() -> dict[str, Any]:
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS proc_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      dungeon_turn INTEGER NOT NULL DEFAULT 0,
+      watch INTEGER NOT NULL DEFAULT 0,
+      torch_turns_left INTEGER NOT NULL DEFAULT 0,
+      wandering_in_6 INTEGER NOT NULL DEFAULT 6,
+      wandering_chance INTEGER NOT NULL DEFAULT 1,
+      wandering_every_turns INTEGER NOT NULL DEFAULT 2
+    );
+    INSERT OR IGNORE INTO proc_state (id) VALUES (1);
+    """)
+  return {"ok": True}
+
 def register_procedures(mcp):
   @mcp.tool()
-  def proc_init() -> dict[str, Any]:
-    """Initialize procedure state tables."""
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS proc_state (
-        id INTEGER PRIMARY KEY CHECK (id = 1),
-        dungeon_turn INTEGER NOT NULL DEFAULT 0,
-        watch INTEGER NOT NULL DEFAULT 0,
-        torch_turns_left INTEGER NOT NULL DEFAULT 0,
-        wandering_in_6 INTEGER NOT NULL DEFAULT 6,
-        wandering_chance INTEGER NOT NULL DEFAULT 1,
-        wandering_every_turns INTEGER NOT NULL DEFAULT 2
-      );
-      INSERT OR IGNORE INTO proc_state (id) VALUES (1);
-      """)
-    return {"ok": True}
+  def proc_init() -> dict:
+    return init_procedures()
 
   @mcp.tool()
   def proc_get() -> dict[str, Any]:

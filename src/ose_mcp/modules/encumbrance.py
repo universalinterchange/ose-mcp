@@ -2,6 +2,18 @@ import json
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_encumbrance() -> dict[str, Any]:
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS item_weights (
+      item TEXT PRIMARY KEY,
+      weight INTEGER NOT NULL
+    );
+    """)
+    for k, w in DEFAULT_ITEM_WEIGHTS.items():
+      con.execute("INSERT OR IGNORE INTO item_weights(item, weight) VALUES (?,?)", (k, int(w)))
+  return {"ok": True}
+
 DEFAULT_ITEM_WEIGHTS = {
   "Torch": 1,
   "Ration": 1,
@@ -12,17 +24,8 @@ DEFAULT_ITEM_WEIGHTS = {
 
 def register_encumbrance(mcp):
   @mcp.tool()
-  def encumbrance_init() -> dict[str, Any]:
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS item_weights (
-        item TEXT PRIMARY KEY,
-        weight INTEGER NOT NULL
-      );
-      """)
-      for k, w in DEFAULT_ITEM_WEIGHTS.items():
-        con.execute("INSERT OR IGNORE INTO item_weights(item, weight) VALUES (?,?)", (k, int(w)))
-    return {"ok": True}
+  def encumbrance_init() -> dict:
+    return init_encumbrance()
 
   @mcp.tool()
   def set_item_weight(item: str, weight: int) -> dict[str, Any]:

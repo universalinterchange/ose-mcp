@@ -3,6 +3,32 @@ import random
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_consequences() -> dict[str, Any]:
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS npc_memory (
+      npc_id INTEGER NOT NULL,
+      ts TEXT DEFAULT (datetime('now')),
+      entry TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS reputation (
+      id INTEGER PRIMARY KEY CHECK (id=1),
+      fame INTEGER NOT NULL DEFAULT 0,
+      notoriety INTEGER NOT NULL DEFAULT 0
+    );
+    INSERT OR IGNORE INTO reputation (id) VALUES (1);
+
+    CREATE TABLE IF NOT EXISTS injuries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pc_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      effect TEXT NOT NULL,
+      active INTEGER NOT NULL DEFAULT 1,
+      ts TEXT DEFAULT (datetime('now'))
+    );    """)
+  return {"ok": True}
+
 INJURIES = [
   ("Sprained ankle", "move_rate -30 until healed"),
   ("Broken ribs", "disadvantage on strenuous checks (narrative)"),
@@ -13,32 +39,8 @@ INJURIES = [
 
 def register_consequences(mcp):
   @mcp.tool()
-  def consequences_init() -> dict[str, Any]:
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS npc_memory (
-        npc_id INTEGER NOT NULL,
-        ts TEXT DEFAULT (datetime('now')),
-        entry TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS reputation (
-        id INTEGER PRIMARY KEY CHECK (id=1),
-        fame INTEGER NOT NULL DEFAULT 0,
-        notoriety INTEGER NOT NULL DEFAULT 0
-      );
-      INSERT OR IGNORE INTO reputation (id) VALUES (1);
-
-      CREATE TABLE IF NOT EXISTS injuries (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pc_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        effect TEXT NOT NULL,
-        active INTEGER NOT NULL DEFAULT 1,
-        ts TEXT DEFAULT (datetime('now'))
-      );
-      """)
-    return {"ok": True}
+  def consequences_init() -> dict:
+    return init_consequences()
 
   @mcp.tool()
   def npc_remember(npc_id: int, entry: str) -> dict[str, Any]:

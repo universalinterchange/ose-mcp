@@ -2,6 +2,21 @@ import random
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_adventures() -> dict[str, Any]:
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS quests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'open',
+      details TEXT NOT NULL,
+      reward TEXT NOT NULL DEFAULT '',
+      linked_site_id INTEGER,
+      created_ts TEXT DEFAULT (datetime('now'))
+    );
+    """)
+  return {"ok": True}
+
 PATRONS = ["a desperate widow", "a minor noble", "a worried priest", "a smug merchant", "a nervous guild rep"]
 PROBLEMS = ["missing person", "stolen relic", "bandit threat", "haunted ruin", "monster lair", "political sabotage"]
 REWARDS = ["coin", "land deed", "favor", "rare map", "magic trinket", "access to training"]
@@ -9,20 +24,8 @@ TWISTS = ["a rival party interferes", "the patron lies", "it’s a trap", "the t
 
 def register_adventures(mcp):
   @mcp.tool()
-  def adventures_init() -> dict[str, Any]:
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS quests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'open',
-        details TEXT NOT NULL,
-        reward TEXT NOT NULL DEFAULT '',
-        linked_site_id INTEGER,
-        created_ts TEXT DEFAULT (datetime('now'))
-      );
-      """)
-    return {"ok": True}
+  def adventures_init() -> dict:
+    return init_adventures()
 
   @mcp.tool()
   def quest_generate(theme: str = "generic", link_site_id: int | None = None) -> dict[str, Any]:

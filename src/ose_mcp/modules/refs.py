@@ -1,23 +1,26 @@
 from typing import Any
 from ose_mcp.storage.db import connect_refs as connect
 
+def init_refs() -> dict[str, Any]:
+  """Create refs tables + FTS index."""
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS refs_pages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      url TEXT UNIQUE,
+      title TEXT,
+      text TEXT
+    );
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS refs_fts
+    USING fts5(title, text, content='refs_pages', content_rowid='id');
+    """)
+  return {"ok": True}
+
 def register_refs(mcp):
   @mcp.tool()
-  def refs_init() -> dict[str, Any]:
-    """Create refs tables + FTS index."""
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS refs_pages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        url TEXT UNIQUE,
-        title TEXT,
-        text TEXT
-      );
-
-      CREATE VIRTUAL TABLE IF NOT EXISTS refs_fts
-      USING fts5(title, text, content='refs_pages', content_rowid='id');
-      """)
-    return {"ok": True}
+  def refs_init() -> dict:
+    return init_refs()
 
   @mcp.tool()
   def search_refs(query: str, limit: int = 5) -> dict[str, Any]:

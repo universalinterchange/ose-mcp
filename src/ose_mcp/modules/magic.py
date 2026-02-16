@@ -2,24 +2,27 @@ import json
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_mqgic() -> dict[str, Any]:
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS spellbooks (
+      pc_id INTEGER NOT NULL,
+      spell TEXT NOT NULL,
+      PRIMARY KEY (pc_id, spell)
+    );
+    CREATE TABLE IF NOT EXISTS prepared_spells (
+      pc_id INTEGER NOT NULL,
+      spell TEXT NOT NULL,
+      qty INTEGER NOT NULL DEFAULT 1,
+      PRIMARY KEY (pc_id, spell)
+    );
+    """)
+  return {"ok": True}
+
 def register_magic(mcp):
   @mcp.tool()
-  def magic_init() -> dict[str, Any]:
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS spellbooks (
-        pc_id INTEGER NOT NULL,
-        spell TEXT NOT NULL,
-        PRIMARY KEY (pc_id, spell)
-      );
-      CREATE TABLE IF NOT EXISTS prepared_spells (
-        pc_id INTEGER NOT NULL,
-        spell TEXT NOT NULL,
-        qty INTEGER NOT NULL DEFAULT 1,
-        PRIMARY KEY (pc_id, spell)
-      );
-      """)
-    return {"ok": True}
+  def magic_init() -> dict:
+    return init_magic()
 
   @mcp.tool()
   def set_spell_slots(pc_id: int, slots_by_level: dict[str, int]) -> dict[str, Any]:

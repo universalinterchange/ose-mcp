@@ -3,25 +3,27 @@ import random
 from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
+def init_hirelings() -> dict[str, Any]:
+  with connect() as con:
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS hirelings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL,
+      wage_gp_per_day INTEGER NOT NULL DEFAULT 1,
+      loyalty INTEGER NOT NULL DEFAULT 7,
+      morale INTEGER NOT NULL DEFAULT 7,
+      employed INTEGER NOT NULL DEFAULT 1,
+      meta_json TEXT NOT NULL DEFAULT '{}'
+    """)
+  return {"ok": True}
+
 NAMES = ["Aldo","Brina","Cora","Dain","Edda","Fenn","Garr","Hale","Ivo","Jory","Kara","Lenn","Mira","Nash","Orin"]
 
 def register_hirelings(mcp):
   @mcp.tool()
-  def hirelings_init() -> dict[str, Any]:
-    with connect() as con:
-      con.executescript("""
-      CREATE TABLE IF NOT EXISTS hirelings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        role TEXT NOT NULL,
-        wage_gp_per_day INTEGER NOT NULL DEFAULT 1,
-        loyalty INTEGER NOT NULL DEFAULT 7,
-        morale INTEGER NOT NULL DEFAULT 7,
-        employed INTEGER NOT NULL DEFAULT 1,
-        meta_json TEXT NOT NULL DEFAULT '{}'
-      );
-      """)
-    return {"ok": True}
+  def hirelings_init() -> dict:
+    return init_hirelings()
 
   @mcp.tool()
   def recruit_hireling(role: str, wage_gp_per_day: int = 1, loyalty: int = 7, morale: int = 7, name: str | None = None) -> dict[str, Any]:
