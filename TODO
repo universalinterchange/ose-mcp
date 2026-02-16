@@ -1,3 +1,16 @@
+make it so can read in a pdf adventure and run that
+
+more of a human command line
+
+Instead of hardcoding OSE rules, store them in DB and let tools reference them:
+    •    class_progression tables (xp thresholds, thac0, saves, spell slots)
+    •    equipment tables (price, weight, tags)
+    •    monster minimal stats (HD, AC, morale, treasure type)
+    •    services table for towns
+    •    pc_apply_class_tables(pc_id) (pull exact numbers)
+    •    market_seed_ose_basic()
+    •    seed_monsters_from_refs(...) (if your refs index is good)
+
     •    campaign_list()
     •    campaign_create(name)
     •    campaign_switch(name)
@@ -15,17 +28,6 @@
       •    encounter check (by hex biome + danger)
       •    fatigue / rations
       •    updates location/time
-
-Instead of hardcoding OSE rules, store them in DB and let tools reference them:
-    •    class_progression tables (xp thresholds, thac0, saves, spell slots)
-    •    equipment tables (price, weight, tags)
-    •    monster minimal stats (HD, AC, morale, treasure type)
-    •    services table for towns
-    •    pc_apply_class_tables(pc_id) (pull exact numbers)
-    •    market_seed_ose_basic()
-    •    seed_monsters_from_refs(...) (if your refs index is good)
-
-lint_tools()
 
     •    party_create(name)
     •    party_add_pc(party_id, pc_id)
