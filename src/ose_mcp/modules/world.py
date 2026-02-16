@@ -4,7 +4,6 @@ from typing import Any
 from ose_mcp.storage.db import connect_campaign as connect
 
 def init_world() -> dict[str, Any]:
-  """Initialize world tables (NPCs, factions, relationships, rumors, sites, hexes, dungeons)."""
   with connect() as con:
     con.executescript("""
     PRAGMA foreign_keys=ON;
@@ -84,10 +83,12 @@ def init_world() -> dict[str, Any]:
 def register_world(mcp):
   @mcp.tool()
   def world_init() -> dict:
+    """Initialize world tables (NPCs, factions, relationships, rumors, sites, hexes, dungeons)."""
     return init_world()
 
   @mcp.tool()
   def create_npc(name: str | None = None, role: str | None = None, tags: list[str] | None = None) -> dict[str, Any]:
+    """Create an NPC and return its id."""
     tags = tags or []
     if not name:
       name = random.choice(["Aldo", "Brina", "Cora", "Dain", "Edda", "Fenn", "Garr", "Hale", "Ivo", "Jory"])
@@ -101,6 +102,7 @@ def register_world(mcp):
 
   @mcp.tool()
   def npc_roster(query: str = "", limit: int = 25) -> dict[str, Any]:
+    """List NPCs."""
     q = (query or "").strip().lower()
     with connect() as con:
       if q:
@@ -114,6 +116,7 @@ def register_world(mcp):
 
   @mcp.tool()
   def create_faction(name: str, power: int = 1, tags: list[str] | None = None) -> dict[str, Any]:
+    """Create a faction and return its id."""
     meta = {"tags": tags or []}
     with connect() as con:
       cur = con.execute(
@@ -124,12 +127,14 @@ def register_world(mcp):
 
   @mcp.tool()
   def faction_list() -> dict[str, Any]:
+    """List factions."""
     with connect() as con:
       rows = con.execute("SELECT id, name, power FROM factions ORDER BY id ASC").fetchall()
     return {"factions": [dict(r) for r in rows]}
 
   @mcp.tool()
   def relationship_set(a_type: str, a_id: int, b_type: str, b_id: int, status: str, intensity: int = 1) -> dict[str, Any]:
+    """Set relationship score between two entities."""
     st = (status or "neutral").strip().lower()
     with connect() as con:
       con.execute(
@@ -141,6 +146,7 @@ def register_world(mcp):
 
   @mcp.tool()
   def record_rumor(text: str, truth: int = 1, tags: list[str] | None = None) -> dict[str, Any]:
+    """Record a rumor and return its id."""
     t = ",".join(tags or [])
     with connect() as con:
       cur = con.execute("INSERT INTO rumors(text, truth, tags) VALUES (?,?,?)", (text, int(truth), t))
@@ -148,6 +154,7 @@ def register_world(mcp):
 
   @mcp.tool()
   def get_rumor(unused_only: bool = True) -> dict[str, Any]:
+    """Get one rumor (random or by id) and return text."""
     with connect() as con:
       if unused_only:
         row = con.execute("SELECT * FROM rumors WHERE used=0 ORDER BY RANDOM() LIMIT 1").fetchone()
@@ -179,6 +186,7 @@ def register_world(mcp):
 
   @mcp.tool()
   def create_dungeon(name: str) -> dict[str, Any]:
+    """Create a dungeon and return its id."""
     with connect() as con:
       cur = con.execute("INSERT INTO dungeons(name) VALUES (?)", (name,))
     return {"dungeon_id": cur.lastrowid, "name": name}
@@ -269,13 +277,7 @@ def register_world(mcp):
     return {"ok": True, "weeks": w, "events": events}
 
   @mcp.tool()
-  def region_seed(
-    region: str,
-    center_hex: str = "A1",
-    radius: int = 2,
-    biome: str = "plains",
-    danger_level: int = 1
-  ) -> dict[str, Any]:
+  def region_seed(region: str, center_hex: str = "A1", radius: int = 2, biome: str = "plains", danger_level: int = 1) -> dict[str, Any]:
     """
     Pre-create hex records in a loose 'radius' around a named region.
     We don't enforce real hex geometry here; we just create keys like A1.. for convenience.
@@ -339,6 +341,7 @@ def register_world(mcp):
 
   @mcp.tool()
   def site_create(name: str, kind: str, hex_key: str | None = None, tags: list[str] | None = None) -> dict[str, Any]:
+    """Create a site (town/ruin/etc) and return its id."""
     meta = {"tags": tags or []}
     with connect() as con:
       cur = con.execute(
@@ -349,6 +352,7 @@ def register_world(mcp):
 
   @mcp.tool()
   def site_list(hex_key: str | None = None) -> dict[str, Any]:
+    """List known sites."""
     with connect() as con:
       if hex_key:
         hk = hex_key.strip().upper()

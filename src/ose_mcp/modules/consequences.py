@@ -40,22 +40,26 @@ INJURIES = [
 def register_consequences(mcp):
   @mcp.tool()
   def consequences_init() -> dict:
+    """Initialize consequences tables (injuries, reputation, NPC memory)."""
     return init_consequences()
 
   @mcp.tool()
   def npc_remember(npc_id: int, entry: str) -> dict[str, Any]:
+    """NPC Remembers"""
     with connect() as con:
       con.execute("INSERT INTO npc_memory(npc_id, entry) VALUES (?,?)", (int(npc_id), entry))
     return {"ok": True, "npc_id": int(npc_id)}
 
   @mcp.tool()
   def npc_memory_log(npc_id: int, limit: int = 20) -> dict[str, Any]:
+    """NPC recalls from Memory"""
     with connect() as con:
       rows = con.execute("SELECT ts, entry FROM npc_memory WHERE npc_id=? ORDER BY ts DESC LIMIT ?", (int(npc_id), int(limit))).fetchall()
     return {"npc_id": int(npc_id), "memory": [dict(r) for r in rows]}
 
   @mcp.tool()
   def reputation_adjust(fame: int = 0, notoriety: int = 0) -> dict[str, Any]:
+    """Adjust reputation by delta and return updated value."""
     with connect() as con:
       row = con.execute("SELECT fame, notoriety FROM reputation WHERE id=1").fetchone()
       f = int(row["fame"]) + int(fame)
@@ -65,12 +69,14 @@ def register_consequences(mcp):
 
   @mcp.tool()
   def reputation_get() -> dict[str, Any]:
+    """Get Reputation by ID"""
     with connect() as con:
       row = con.execute("SELECT fame, notoriety FROM reputation WHERE id=1").fetchone()
     return {"fame": int(row["fame"]), "notoriety": int(row["notoriety"])}
 
   @mcp.tool()
   def apply_injury(pc_id: int, name: str | None = None, effect: str | None = None) -> dict[str, Any]:
+    """Apply an injury to a PC and return the injury record."""
     if name is None or effect is None:
       name, effect = random.choice(INJURIES)
     with connect() as con:
@@ -79,12 +85,14 @@ def register_consequences(mcp):
 
   @mcp.tool()
   def heal_injury(injury_id: int) -> dict[str, Any]:
+    """Heal or mark an injury resolved for a PC."""
     with connect() as con:
       con.execute("UPDATE injuries SET active=0 WHERE id=?", (int(injury_id),))
     return {"ok": True, "injury_id": int(injury_id), "active": 0}
 
   @mcp.tool()
   def list_injuries(pc_id: int, active_only: bool = True) -> dict[str, Any]:
+    """List injuries for a PC by ID"""
     with connect() as con:
       if active_only:
         rows = con.execute("SELECT id,name,effect,ts FROM injuries WHERE pc_id=? AND active=1 ORDER BY id DESC", (int(pc_id),)).fetchall()

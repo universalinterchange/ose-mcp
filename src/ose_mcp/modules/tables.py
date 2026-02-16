@@ -43,6 +43,7 @@ def _weighted_pick(rows: list[dict[str, Any]]) -> dict[str, Any]:
 def register_tables(mcp):
   @mcp.tool()
   def tables_init() -> dict:
+    """Initialize encounter tables and entries."""
     return init_tables()
 
   @mcp.tool()
@@ -110,6 +111,7 @@ def register_tables(mcp):
 
   @mcp.tool()
   def list_encounter_entries(table_id: int) -> dict[str, Any]:
+    """List entries for one encounter table."""
     with connect() as con:
       rows = con.execute(
         "SELECT entry_id, weight, label, data_json FROM encounter_entries WHERE table_id=? ORDER BY entry_id",

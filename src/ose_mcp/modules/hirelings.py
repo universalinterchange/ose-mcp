@@ -23,10 +23,12 @@ NAMES = ["Aldo","Brina","Cora","Dain","Edda","Fenn","Garr","Hale","Ivo","Jory","
 def register_hirelings(mcp):
   @mcp.tool()
   def hirelings_init() -> dict:
+    """Initialize hireling roster tables (recruitment, wages, status)."""
     return init_hirelings()
 
   @mcp.tool()
   def recruit_hireling(role: str, wage_gp_per_day: int = 1, loyalty: int = 7, morale: int = 7, name: str | None = None) -> dict[str, Any]:
+    """Recruit Hirelings"""
     nm = name or random.choice(NAMES)
     with connect() as con:
       cur = con.execute(
@@ -37,6 +39,7 @@ def register_hirelings(mcp):
 
   @mcp.tool()
   def hireling_roster(active_only: bool = True) -> dict[str, Any]:
+    """List Hirelings"""
     with connect() as con:
       if active_only:
         rows = con.execute("SELECT id,name,role,wage_gp_per_day,loyalty,morale FROM hirelings WHERE employed=1 ORDER BY id").fetchall()
@@ -46,6 +49,7 @@ def register_hirelings(mcp):
 
   @mcp.tool()
   def pay_wages(days: int = 1) -> dict[str, Any]:
+    """Pay Hirelings their Wages"""
     d = max(1, int(days))
     with connect() as con:
       rows = con.execute("SELECT id,name,wage_gp_per_day FROM hirelings WHERE employed=1").fetchall()
@@ -66,6 +70,7 @@ def register_hirelings(mcp):
 
   @mcp.tool()
   def dismiss_hireling(hireling_id: int) -> dict[str, Any]:
+    """Dismiss Hireling"""
     with connect() as con:
       con.execute("UPDATE hirelings SET employed=0 WHERE id=?", (int(hireling_id),))
     return {"ok": True, "hireling_id": int(hireling_id), "employed": 0}

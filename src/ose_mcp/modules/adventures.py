@@ -25,10 +25,12 @@ TWISTS = ["a rival party interferes", "the patron lies", "it’s a trap", "the t
 def register_adventures(mcp):
   @mcp.tool()
   def adventures_init() -> dict:
+    """Initialize adventures/quests tables (safe to run multiple times)."""
     return init_adventures()
 
   @mcp.tool()
   def quest_generate(theme: str = "generic", link_site_id: int | None = None) -> dict[str, Any]:
+    """Generate Quest and return ID"""
     patron = random.choice(PATRONS)
     problem = random.choice(PROBLEMS)
     reward = random.choice(REWARDS)
@@ -45,6 +47,7 @@ def register_adventures(mcp):
 
   @mcp.tool()
   def quest_list(status: str = "open") -> dict[str, Any]:
+    """List Quests with ID"""
     st = (status or "open").lower()
     with connect() as con:
       rows = con.execute("SELECT id,title,status,reward,linked_site_id,created_ts FROM quests WHERE lower(status)=lower(?) ORDER BY id DESC", (st,)).fetchall()
@@ -52,6 +55,7 @@ def register_adventures(mcp):
 
   @mcp.tool()
   def quest_set_status(quest_id: int, status: str) -> dict[str, Any]:
+    """Update Quest by ID"""
     with connect() as con:
       con.execute("UPDATE quests SET status=? WHERE id=?", (status, int(quest_id)))
     return {"ok": True, "quest_id": int(quest_id), "status": status}

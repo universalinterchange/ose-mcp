@@ -25,10 +25,12 @@ DEFAULT_ITEM_WEIGHTS = {
 def register_encumbrance(mcp):
   @mcp.tool()
   def encumbrance_init() -> dict:
+    """Initialize encumbrance tables (item weights)."""
     return init_encumbrance()
 
   @mcp.tool()
   def set_item_weight(item: str, weight: int) -> dict[str, Any]:
+    """Set Item Weight for Encumbrance"""
     with connect() as con:
       con.execute("INSERT INTO item_weights(item, weight) VALUES (?,?) ON CONFLICT(item) DO UPDATE SET weight=excluded.weight",
             (item, int(weight)))

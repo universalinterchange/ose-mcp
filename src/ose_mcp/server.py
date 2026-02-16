@@ -1,5 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 
+from ose_mcp.modules.help import register_help
+from ose_mcp.modules.ops import register_ops
 from ose_mcp.modules.mechanics import register_mechanics
 from ose_mcp.modules.procedures import register_procedures
 from ose_mcp.modules.stocking import register_stocking
@@ -20,11 +22,12 @@ from ose_mcp.modules.hirelings import register_hirelings
 from ose_mcp.modules.economy import register_economy
 from ose_mcp.modules.adventures import register_adventures
 from ose_mcp.modules.consequences import register_consequences
-from ose_mcp.modules.help import register_help
 
 mcp = FastMCP(name="ose-mcp")
 
 def main():
+  register_help(mcp)
+  register_ops(mcp)
   register_mechanics(mcp)
   register_procedures(mcp)
   register_stocking(mcp)
@@ -45,7 +48,6 @@ def main():
   register_economy(mcp)
   register_adventures(mcp)
   register_consequences(mcp)
-  register_help(mcp)
 
   mcp.run()  # stdio transport for Claude Desktop
 

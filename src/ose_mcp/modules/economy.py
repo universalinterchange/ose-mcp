@@ -15,10 +15,12 @@ def init_economy() -> dict[str, Any]:
 def register_economy(mcp):
   @mcp.tool()
   def economy_init() -> dict:
+    """Initialize economy/market tables (prices, merchants, services)."""
     return init_economy()
 
   @mcp.tool()
   def set_market_item(name: str, base_price_gp: int, tags: list[str] | None = None) -> dict[str, Any]:
+    """Create Item in Market"""
     t = ",".join(tags or [])
     with connect() as con:
       con.execute(
@@ -30,6 +32,7 @@ def register_economy(mcp):
 
   @mcp.tool()
   def buy_item(pc_id: int, item: str, qty: int = 1, price_mod: float = 1.0) -> dict[str, Any]:
+    """ Buy Item by Name"""
     q = max(1, int(qty))
     with connect() as con:
       m = con.execute("SELECT base_price_gp FROM market_items WHERE name=?", (item,)).fetchone()
@@ -59,6 +62,7 @@ def register_economy(mcp):
 
   @mcp.tool()
   def sell_item(pc_id: int, item: str, qty: int = 1, sell_rate: float = 0.5) -> dict[str, Any]:
+    """Sell Item by ID"""
     q = max(1, int(qty))
     with connect() as con:
       m = con.execute("SELECT base_price_gp FROM market_items WHERE name=?", (item,)).fetchone()

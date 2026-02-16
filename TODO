@@ -1,0 +1,39 @@
+    •    campaign_list()
+    •    campaign_create(name)
+    •    campaign_switch(name)
+    •    campaign_backup() (copy to timestamped file)
+    •    campaign_export_json() / campaign_import_json()
+
+    •    dungeon_turn(pc_id, dungeon_id):
+      •    tick light
+      •    tick time
+      •    encounter check
+      •    resource tick (rations every N turns)
+      •    returns “what happens next” suggestions
+    •    travel_day(party_ids, hex_from, hex_to):
+      •    weather
+      •    encounter check (by hex biome + danger)
+      •    fatigue / rations
+      •    updates location/time
+
+Instead of hardcoding OSE rules, store them in DB and let tools reference them:
+    •    class_progression tables (xp thresholds, thac0, saves, spell slots)
+    •    equipment tables (price, weight, tags)
+    •    monster minimal stats (HD, AC, morale, treasure type)
+    •    services table for towns
+    •    pc_apply_class_tables(pc_id) (pull exact numbers)
+    •    market_seed_ose_basic()
+    •    seed_monsters_from_refs(...) (if your refs index is good)
+
+lint_tools()
+
+    •    party_create(name)
+    •    party_add_pc(party_id, pc_id)
+    •    party_add_hireling(party_id, hireling_id)
+    •    party_status(party_id) (HP, light, encumbrance summary)
+    •    party_location_set(party_id, hex_key, site_id=None)
+    •    log_event(text, tags=[...])
+    •    log_last(n=20)
+    •    session_recap() (summarize last N entries)
+    •    bookmark(name) (save state points)
+

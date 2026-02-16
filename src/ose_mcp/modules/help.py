@@ -1,187 +1,154 @@
 import inspect
 from typing import Any
 
-def _tool_registry(mcp) -> dict[str, Any]:
-  """
-  FastMCP internal registry varies by version. Try common locations.
-  Returns dict-like mapping of tool_name -> tool_object.
-  """
-  for attr in ("_tools", "tools", "_tool_map", "_registry"):
-    reg = getattr(mcp, attr, None)
-    if isinstance(reg, dict) and reg:
-      return reg
-  # Some versions keep a list/iterable; normalize if possible
-  reg = getattr(mcp, "_tools", None)
-  if isinstance(reg, dict):
-    return reg
-  return {}
-
-def _tool_callable(tool_obj: Any):
-  """
-  Try to extract the underlying function for signature/doc.
-  Tool wrappers differ across versions.
-  """
-  for attr in ("fn", "func", "function", "_fn", "_func", "callable"):
-    f = getattr(tool_obj, attr, None)
-    if callable(f):
-      return f
-  # If tool_obj itself is callable, use it
-  if callable(tool_obj):
-    return tool_obj
-  return None
-
-def _tool_description(tool_obj: Any) -> str:
-  for attr in ("description", "__doc__"):
-    d = getattr(tool_obj, attr, None)
-    if isinstance(d, str) and d.strip():
-      return d.strip()
-  f = _tool_callable(tool_obj)
-  if f and isinstance(getattr(f, "__doc__", None), str):
-    return (f.__doc__ or "").strip()
-  return ""
-
-def _tool_signature(tool_obj: Any) -> str:
-  f = _tool_callable(tool_obj)
-  if not f:
-    return ""
-  try:
-    return str(inspect.signature(f))
-  except Exception:
-    return ""
-
-def _group_tools(names: list[str]) -> dict[str, list[str]]:
-  groups: dict[str, list[str]] = {}
-  for n in names:
-    prefix = n.split("_", 1)[0] if "_" in n else "misc"
-    groups.setdefault(prefix, []).append(n)
-  for k in groups:
-    groups[k].sort()
-  return dict(sorted(groups.items(), key=lambda kv: kv[0]))
-
 def register_help(mcp):
+  tool_names: list[str] = []
+  tool_registrations: list[str] = []
+  tool_meta: dict[str, dict[str, Any]] = {}
 
-  @mcp.tool()
-  def help() -> dict[str, Any]:
+  orig_tool = mcp.tool
+
+  def _short_module(mod: str) -> str:
+    # 'ose_mcp.modules.world' -> 'world'
+    if not mod:
+      return "unknown"
+    parts = mod.split(".")
+    return parts[-1]
+
+  def _capture(fn, name: str):
+    sig = ""
+    try:
+      sig = str(inspect.signature(fn))
+    except Exception:
+      sig = ""
+
+    desc = (fn.__doc__ or "").strip() if hasattr(fn, "__doc__") else ""
+    mod = _short_module(getattr(fn, "__module__", ""))
+
+    tool_names.append(name)
+    tool_registrations.append(name)
+
+    tool_meta[name] = {
+      "name": name,
+      "module": mod,
+      "signature": sig,
+      "description": desc
+    }
+
+    # Expose for other modules (ops.lint_tools)
+    mcp._ose_tool_names = tool_names
+    mcp._ose_tool_registrations = tool_registrations
+    mcp._ose_tool_meta = tool_meta
+
+  def _group_by_module(names: list[str]) -> dict[str, list[str]]:
+    grouped: dict[str, list[str]] = {}
+    for n in names:
+      mod = tool_meta.get(n, {}).get("module", "unknown")
+      grouped.setdefault(mod, []).append(n)
+    for k in grouped:
+      grouped[k].sort()
+    return dict(sorted(grouped.items(), key=lambda kv: kv[0]))
+
+  def _group_by_prefix(names: list[str]) -> dict[str, list[str]]:
+    grouped: dict[str, list[str]] = {}
+    for n in names:
+      prefix = n.split("_", 1)[0] if "_" in n else "misc"
+      grouped.setdefault(prefix, []).append(n)
+    for k in grouped:
+      grouped[k].sort()
+    return dict(sorted(grouped.items(), key=lambda kv: kv[0]))
+
+  # Help tools registered with original decorator
+  @orig_tool()
+  def ose_help(view: str = "module") -> dict[str, Any]:
     """
-    Show an overview of all available tools.
-    Tools are grouped by the prefix before the first underscore, e.g. 'world_*'.
+    List available tools.
+    view='module' groups by python module (recommended)
+    view='prefix' groups by name prefix (legacy)
     """
-    reg = _tool_registry(mcp)
-    names = sorted(list(reg.keys()))
-    grouped = _group_tools(names)
+    names = sorted(set(tool_names))
+    v = (view or "module").strip().lower()
+    if v == "prefix":
+      grouped = _group_by_prefix(names)
+    else:
+      grouped = _group_by_module(names)
+
     return {
+      "ok": True,
       "tool_count": len(names),
+      "view": v,
       "modules": {k: len(v) for k, v in grouped.items()},
       "grouped": grouped
     }
 
-  @mcp.tool()
-  def help_module(module: str) -> dict[str, Any]:
+  @orig_tool()
+  def ose_help_module(module: str) -> dict[str, Any]:
     """
-    List tools in a module group (prefix before underscore).
-    Example: help_module("world") returns all world_* tools.
+    Show tools for a python module name, e.g. 'world', 'state', 'tables'.
     """
     mod = (module or "").strip().lower()
-    reg = _tool_registry(mcp)
-    names = sorted(list(reg.keys()))
-    matched = [n for n in names if (n.split("_", 1)[0].lower() == mod)]
-    tools = []
-    for n in matched:
-      t = reg.get(n)
-      tools.append({
-        "name": n,
-        "signature": _tool_signature(t),
-        "description": _tool_description(t),
-      })
-    return {
-      "module": mod,
-      "count": len(matched),
-      "tools": tools
-    }
-
-  @mcp.tool()
-  def help_tool(name: str) -> dict[str, Any]:
-    """
-    Show details for a single tool by exact name.
-    Example: help_tool("random_encounter")
-    """
-    nm = (name or "").strip()
-    reg = _tool_registry(mcp)
-    if nm not in reg:
-      # try case-insensitive / partial fallback
-      keys = sorted(reg.keys())
-      near = [k for k in keys if k.lower() == nm.lower()]
-      if near:
-        nm = near[0]
-      else:
-        partial = [k for k in keys if nm.lower() in k.lower()]
-        return {
-          "ok": False,
-          "error": "tool not found",
-          "query": name,
-          "suggestions": partial[:25]
-        }
-    t = reg[nm]
+    names = sorted(set(tool_names))
+    matched = [n for n in names if tool_meta.get(n, {}).get("module", "").lower() == mod]
     return {
       "ok": True,
-      "name": nm,
-      "signature": _tool_signature(t),
-      "description": _tool_description(t),
+      "module": mod,
+      "count": len(matched),
+      "tools": [tool_meta.get(n, {"name": n}) for n in matched]
     }
 
-  @mcp.tool()
-  def help_search(query: str, limit: int = 25) -> dict[str, Any]:
+  @orig_tool()
+  def ose_help_tool(name: str) -> dict[str, Any]:
     """
-    Search tools by name and docstring.
+    Show one tool by exact name; returns suggestions if not found.
+    """
+    nm = (name or "").strip()
+    names = sorted(set(tool_names))
+    if nm not in tool_meta:
+      sugg = [n for n in names if nm.lower() in n.lower()]
+      return {"ok": False, "error": "tool not found", "query": name, "suggestions": sugg[:50]}
+    return {"ok": True, "tool": tool_meta[nm]}
+
+  @orig_tool()
+  def ose_help_search(query: str, limit: int = 25) -> dict[str, Any]:
+    """
+    Search tools by name + description.
     """
     q = (query or "").strip().lower()
     lim = max(1, min(200, int(limit)))
-    reg = _tool_registry(mcp)
     if not q:
       return {"ok": False, "error": "empty query"}
-
+    names = sorted(set(tool_names))
     hits = []
-    for name, t in reg.items():
-      desc = _tool_description(t)
-      hay = (name + "\n" + desc).lower()
+    for n in names:
+      meta = tool_meta.get(n, {"name": n, "signature": "", "description": "", "module": "unknown"})
+      hay = (n + "\n" + (meta.get("description") or "")).lower()
       if q in hay:
-        hits.append({
-          "name": name,
-          "signature": _tool_signature(t),
-          "description": desc
-        })
+        hits.append(meta)
+    hits.sort(key=lambda x: x.get("name", ""))
+    return {"ok": True, "query": query, "count": len(hits), "results": hits[:lim]}
 
-    hits.sort(key=lambda x: x["name"])
-    return {
-      "ok": True,
-      "query": query,
-      "count": len(hits),
-      "results": hits[:lim]
-    }
-
-  @mcp.tool()
-  def help_markdown() -> dict[str, Any]:
+  @orig_tool()
+  def ose_help_debug() -> dict[str, Any]:
     """
-    Return the help overview as Markdown text (nice for copying).
+    Debug: show how many tools have been captured so far.
     """
-    reg = _tool_registry(mcp)
-    names = sorted(list(reg.keys()))
-    grouped = _group_tools(names)
+    names = sorted(set(tool_names))
+    mods = {}
+    for n in names:
+      mods[tool_meta.get(n, {}).get("module", "unknown")] = mods.get(tool_meta.get(n, {}).get("module", "unknown"), 0) + 1
+    return {"ok": True, "captured": len(names), "modules": dict(sorted(mods.items())), "sample": names[:50]}
 
-    lines = []
-    lines.append(f"# ose-mcp help")
-    lines.append(f"- tools: **{len(names)}**")
-    lines.append("")
-    for mod, tools in grouped.items():
-      lines.append(f"## {mod} ({len(tools)})")
-      for n in tools:
-        t = reg.get(n)
-        sig = _tool_signature(t)
-        desc = _tool_description(t)
-        first = desc.splitlines()[0] if desc else ""
-        if sig:
-          lines.append(f"- `{n}{sig}` — {first}")
-        else:
-          lines.append(f"- `{n}` — {first}")
-      lines.append("")
-    return {"ok": True, "markdown": "\n".join(lines)}
+  # Wrap mcp.tool to capture all tools registered after register_help()
+  def tool_wrapper(*args, **kwargs):
+    decorator = orig_tool(*args, **kwargs)
+
+    def inner(fn):
+      name = kwargs.get("name") if isinstance(kwargs, dict) else None
+      if not name:
+        name = getattr(fn, "__name__", "unknown_tool")
+      _capture(fn, name)
+      return decorator(fn)
+
+    return inner
+
+  mcp.tool = tool_wrapper

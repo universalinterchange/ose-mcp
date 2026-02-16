@@ -2,7 +2,6 @@ from typing import Any
 from ose_mcp.storage.db import connect_refs as connect
 
 def init_refs() -> dict[str, Any]:
-  """Create refs tables + FTS index."""
   with connect() as con:
     con.executescript("""
     CREATE TABLE IF NOT EXISTS refs_pages (
@@ -20,6 +19,7 @@ def init_refs() -> dict[str, Any]:
 def register_refs(mcp):
   @mcp.tool()
   def refs_init() -> dict:
+    """Create refs tables + FTS index."""
     return init_refs()
 
   @mcp.tool()

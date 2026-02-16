@@ -22,6 +22,7 @@ def init_mqgic() -> dict[str, Any]:
 def register_magic(mcp):
   @mcp.tool()
   def magic_init() -> dict:
+    """Initialize spellbook and prepared-spell tables."""
     return init_magic()
 
   @mcp.tool()
@@ -40,12 +41,14 @@ def register_magic(mcp):
 
   @mcp.tool()
   def learn_spell(pc_id: int, spell: str) -> dict[str, Any]:
+    """Learn Spell by Name"""
     with connect() as con:
       con.execute("INSERT OR IGNORE INTO spellbooks(pc_id, spell) VALUES (?,?)", (int(pc_id), spell.strip()))
     return {"ok": True, "pc_id": int(pc_id), "spell": spell.strip()}
 
   @mcp.tool()
   def list_spells(pc_id: int) -> dict[str, Any]:
+    """List Spells in Spellbook"""
     with connect() as con:
       known = con.execute("SELECT spell FROM spellbooks WHERE pc_id=? ORDER BY spell", (int(pc_id),)).fetchall()
       prep = con.execute("SELECT spell, qty FROM prepared_spells WHERE pc_id=? ORDER BY spell", (int(pc_id),)).fetchall()
@@ -57,6 +60,7 @@ def register_magic(mcp):
 
   @mcp.tool()
   def prepare_spell(pc_id: int, spell: str, qty: int = 1) -> dict[str, Any]:
+    """Prepare Spells by Name"""
     q = max(1, int(qty))
     sp = spell.strip()
     with connect() as con:
@@ -72,6 +76,7 @@ def register_magic(mcp):
 
   @mcp.tool()
   def cast_spell(pc_id: int, spell: str) -> dict[str, Any]:
+    """Cast Spell by Name"""
     sp = spell.strip()
     with connect() as con:
       row = con.execute("SELECT qty FROM prepared_spells WHERE pc_id=? AND spell=?", (int(pc_id), sp)).fetchone()

@@ -6,7 +6,7 @@ from ose_mcp.storage.db import connect_refs
 def register_state(mcp):
   @mcp.tool()
   def state_init() -> dict[str, Any]:
-    """Initialize state tables."""
+    """Initialize campaign state tables (PCs, inventory, conditions, log)."""
     with connect() as con:
       con.executescript("""
       CREATE TABLE IF NOT EXISTS pcs (
@@ -53,6 +53,7 @@ def register_state(mcp):
 
   @mcp.tool()
   def create_pc(name: str, klass: str = "", hp: int = 1, max_hp: int = 1, meta: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Create a new PC and return its id."""
     meta = meta or {}
     with connect() as con:
       cur = con.execute(
@@ -63,6 +64,7 @@ def register_state(mcp):
 
   @mcp.tool()
   def get_pc(pc_id: int) -> dict[str, Any]:
+    """Get a PC by id."""
     with connect() as con:
       row = con.execute("SELECT * FROM pcs WHERE id=?", (int(pc_id),)).fetchone()
       if not row:
@@ -77,6 +79,7 @@ def register_state(mcp):
 
   @mcp.tool()
   def apply_damage(pc_id: int, amount: int) -> dict[str, Any]:
+    """Apply damage to a PC and return updated HP."""
     with connect() as con:
       row = con.execute("SELECT hp, max_hp FROM pcs WHERE id=?", (int(pc_id),)).fetchone()
       if not row:
@@ -87,6 +90,7 @@ def register_state(mcp):
 
   @mcp.tool()
   def heal(pc_id: int, amount: int) -> dict[str, Any]:
+    """Heal a PC and return updated HP."""
     with connect() as con:
       row = con.execute("SELECT hp, max_hp FROM pcs WHERE id=?", (int(pc_id),)).fetchone()
       if not row:
@@ -97,6 +101,7 @@ def register_state(mcp):
 
   @mcp.tool()
   def add_item(pc_id: int, item: str, qty: int = 1) -> dict[str, Any]:
+    """Add an item to a PC inventory (increments qty if already present)."""
     if qty == 0:
       return {"ok": True, "note": "qty=0 no change"}
     with connect() as con:
@@ -114,6 +119,7 @@ def register_state(mcp):
 
   @mcp.tool()
   def set_condition(pc_id: int, condition: str, on: bool = True) -> dict[str, Any]:
+    """Set or clear a condition on a PC."""
     with connect() as con:
       con.execute(
         "INSERT INTO pc_conditions(pc_id,condition,on_off) VALUES (?,?,?) "
@@ -124,6 +130,7 @@ def register_state(mcp):
 
   @mcp.tool()
   def create_clock(name: str, segments: int = 6, filled: int = 0, meta: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Create Clock"""
     meta = meta or {}
     with connect() as con:
       cur = con.execute(
@@ -134,6 +141,7 @@ def register_state(mcp):
 
   @mcp.tool()
   def tick_clock(clock_id: int, delta: int = 1) -> dict[str, Any]:
+    """Tick Clock"""
     with connect() as con:
       row = con.execute("SELECT filled, segments FROM clocks WHERE id=?", (int(clock_id),)).fetchone()
       if not row:
@@ -144,12 +152,14 @@ def register_state(mcp):
 
   @mcp.tool()
   def log_event(entry: str, tag: str = "") -> dict[str, Any]:
+    """Append a log entry to the campaign log."""
     with connect() as con:
       cur = con.execute("INSERT INTO log (tag, entry) VALUES (?,?)", (tag, entry))
       return {"log_id": cur.lastrowid, "tag": tag, "entry": entry}
 
   @mcp.tool()
   def recent_log(tag: str = "", limit: int = 10) -> dict[str, Any]:
+    """Return the most recent log entries."""
     with connect() as con:
       if tag:
         rows = con.execute("SELECT * FROM log WHERE tag=? ORDER BY id DESC LIMIT ?", (tag, int(limit))).fetchall()
@@ -169,7 +179,6 @@ def register_state(mcp):
         "error": "Deletion requires confirm=True",
         "pc_id": pc_id
       }
-
     with connect() as con:
       row = con.execute(
         "SELECT name FROM pcs WHERE id=?",

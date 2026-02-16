@@ -5,6 +5,7 @@ from ose_mcp.storage.db import connect_campaign as connect
 def register_travel(mcp):
   @mcp.tool()
   def weather_roll(region: str = "temperate", season: str = "spring") -> dict[str, Any]:
+    """Roll weather for the current region/season and return conditions."""
     reg = (region or "temperate").lower()
     sea = (season or "spring").lower()
     base = ["clear", "overcast", "rain", "wind", "storm"]

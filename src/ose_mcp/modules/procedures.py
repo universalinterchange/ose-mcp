@@ -20,10 +20,12 @@ def init_procedures() -> dict[str, Any]:
 def register_procedures(mcp):
   @mcp.tool()
   def proc_init() -> dict:
+    """Init Procedures"""
     return init_procedures()
 
   @mcp.tool()
   def proc_get() -> dict[str, Any]:
+    """Get a procedure setting by key."""
     with connect() as con:
       row = con.execute("SELECT * FROM proc_state WHERE id=1").fetchone()
       return dict(row)

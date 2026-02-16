@@ -29,6 +29,7 @@ DEFAULT_LIGHT = {
 def register_light(mcp):
   @mcp.tool()
   def light_init() -> dict:
+    """Initialize light rules and per-PC light state tables."""
     return init_light()
 
   @mcp.tool()
@@ -78,6 +79,7 @@ def register_light(mcp):
 
   @mcp.tool()
   def light_status(pc_id: int) -> dict[str, Any]:
+    """Light Status"""
     with connect() as con:
       st = con.execute("SELECT active_item, turns_left FROM light_state WHERE pc_id=?", (int(pc_id),)).fetchone()
     if not st:
