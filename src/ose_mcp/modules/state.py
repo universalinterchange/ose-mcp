@@ -301,6 +301,7 @@ def register_state(mcp):
       "pcs": results,
     }
 
+"""
   @mcp.tool()
   def award_xp(pc_id: int, amount: int) -> dict[str, Any]:
     """Add XP to a PC (stored in meta.xp)."""
@@ -315,6 +316,7 @@ def register_state(mcp):
       con.execute("UPDATE pcs SET meta_json=? WHERE id=?", (json.dumps(meta), int(pc_id)))
 
     return {"ok": True, "pc_id": pc_id, "awarded": int(amount), "xp": meta["xp"]}
+"""
 
   @mcp.tool()
   def long_rest(pc_id: int, clear_conditions: bool = True) -> dict[str, Any]:

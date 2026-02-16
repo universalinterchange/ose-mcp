@@ -12,6 +12,14 @@ from ose_mcp.modules.travel import register_travel
 from ose_mcp.modules.loot import register_loot
 from ose_mcp.modules.gm import register_gm
 from ose_mcp.modules.tables import register_tables
+from ose_mcp.modules.progression import register_progression
+from ose_mcp.modules.encumbrance import register_encumbrance
+from ose_mcp.modules.light import register_light
+from ose_mcp.modules.magic import register_magic
+from ose_mcp.modules.hirelings import register_hirelings
+from ose_mcp.modules.economy import register_economy
+from ose_mcp.modules.adventures import register_adventures
+from ose_mcp.modules.consequences import register_consequences
 
 mcp = FastMCP(name="ose-mcp")
 
@@ -28,6 +36,14 @@ def main():
   register_loot(mcp)
   register_gm(mcp)
   register_tables(mcp)
+  register_progression(mcp)
+  register_encumbrance(mcp)
+  register_light(mcp)
+  register_magic(mcp)
+  register_hirelings(mcp)
+  register_economy(mcp)
+  register_adventures(mcp)
+  register_consequences(mcp)
 
   mcp.run()  # stdio transport for Claude Desktop
 

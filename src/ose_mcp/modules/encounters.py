@@ -49,11 +49,12 @@ def register_encounters(mcp):
         return {"terrain": terr, "caught": True, "round": i, "history": history}
 
     return {"terrain": terr, "caught": False, "lead": lead, "history": history}
-
+  
+  """
   @mcp.tool()
   def hireling_check(loyalty: int = 7, mod: int = 0) -> dict[str, Any]:
     """2d6 loyalty/morale-ish check: pass if (2d6+mod) <= loyalty."""
     rolls = [random.randint(1, 6), random.randint(1, 6)]
     total = sum(rolls) + int(mod)
     return {"rolls": rolls, "mod": int(mod), "total": total, "loyalty": int(loyalty), "stay": total <= int(loyalty)}
-
+  """
