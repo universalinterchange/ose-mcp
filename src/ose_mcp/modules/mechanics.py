@@ -53,4 +53,3 @@ def register_mechanics(mcp):
     die = 6 if in_6 else 8
     r = random.randint(1, die)
     return {"die": die, "roll": r, "chance": chance, "encounter": r <= chance}
-

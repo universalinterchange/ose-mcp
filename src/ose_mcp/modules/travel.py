@@ -64,4 +64,3 @@ def register_travel(mcp):
 
     weather = weather_roll("temperate", "spring")["weather"]
     return {"ok": True, "days": d, "terrain": terr, "pace": pace, "weather": weather, "encounters": enc}
-

@@ -89,4 +89,3 @@ def register_consequences(mcp):
       else:
         rows = con.execute("SELECT id,name,effect,active,ts FROM injuries WHERE pc_id=? ORDER BY id DESC", (int(pc_id),)).fetchall()
     return {"pc_id": int(pc_id), "injuries": [dict(r) for r in rows]}
-

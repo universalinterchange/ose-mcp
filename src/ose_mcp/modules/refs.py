@@ -44,4 +44,3 @@ def register_refs(mcp):
       if not row:
         raise ValueError("ref_id not found")
     return dict(row)
-

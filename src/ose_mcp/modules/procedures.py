@@ -126,5 +126,3 @@ def register_procedures(mcp):
       con.execute("UPDATE time_state SET minutes=? WHERE id=1", (minutes,))
 
     return {"ok": True, "added_minutes": add_minutes, "total_minutes": minutes}
-
-

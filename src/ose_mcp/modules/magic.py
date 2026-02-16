@@ -80,4 +80,3 @@ def register_magic(mcp):
       else:
         con.execute("UPDATE prepared_spells SET qty=? WHERE pc_id=? AND spell=?", (qty, int(pc_id), sp))
     return {"ok": True, "pc_id": int(pc_id), "spell": sp, "remaining_prepared": qty}
-

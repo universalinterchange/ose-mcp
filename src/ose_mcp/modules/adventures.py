@@ -52,4 +52,3 @@ def register_adventures(mcp):
     with connect() as con:
       con.execute("UPDATE quests SET status=? WHERE id=?", (status, int(quest_id)))
     return {"ok": True, "quest_id": int(quest_id), "status": status}
-

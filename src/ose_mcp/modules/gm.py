@@ -119,4 +119,3 @@ def register_gm(mcp):
     out["event"] = "unknown_mode"
     out["suggestions"].append("oracle_event()")
     return out
-

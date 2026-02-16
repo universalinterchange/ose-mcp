@@ -38,4 +38,3 @@ def register_loot(mcp):
         "magic_items": magic
       }
     }
-

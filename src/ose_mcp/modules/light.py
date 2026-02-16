@@ -80,4 +80,3 @@ def register_light(mcp):
     if not st:
       return {"pc_id": int(pc_id), "active_item": None, "turns_left": 0}
     return {"pc_id": int(pc_id), "active_item": st["active_item"], "turns_left": int(st["turns_left"])}
-

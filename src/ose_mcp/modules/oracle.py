@@ -136,4 +136,3 @@ def register_oracle(mcp):
       subject = random.choice(["A storm", "A patrol", "A path", "A lair", "A witness", "A map"])
 
     return {"tags": tags, "meaning": {"action": action, "subject": subject}}
-

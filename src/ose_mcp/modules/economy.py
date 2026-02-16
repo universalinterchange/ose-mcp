@@ -80,4 +80,3 @@ def register_economy(mcp):
       con.execute("UPDATE pcs SET meta_json=? WHERE id=?", (json.dumps(meta), int(pc_id)))
 
     return {"ok": True, "pc_id": int(pc_id), "item": item, "sold": q, "revenue_gp": revenue, "coins_now": meta["coins"]}
-

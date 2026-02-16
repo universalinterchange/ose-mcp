@@ -212,4 +212,3 @@ def register_tables(mcp):
     add_encounter_entry(tid, "Ooze/Slime", 1, {"hd": 2, "group": "1"})
     add_encounter_entry(tid, "Patrol (mixed)", 1, {"hd": 2, "group": "1d6+2"})
     return {"ok": True, "table_id": tid}
-

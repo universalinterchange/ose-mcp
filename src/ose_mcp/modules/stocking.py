@@ -80,4 +80,3 @@ def register_stocking(mcp):
       "it’s being fought over",
     ])
     return {"feature": feature, "twist": twist}
-

@@ -151,4 +151,3 @@ def register_progression(mcp):
       meta["xp"] = int(meta.get("xp", 0)) + int(amount)
       _save_meta(con, pc_id, meta)
     return {"ok": True, "pc_id": int(pc_id), "awarded": int(amount), "xp": meta["xp"]}
-

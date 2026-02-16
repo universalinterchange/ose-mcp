@@ -92,4 +92,3 @@ def register_encumbrance(mcp):
       "move_rate": move,
       "details": details
     }
-
